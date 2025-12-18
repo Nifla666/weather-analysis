@@ -41,3 +41,37 @@ class WeatherAnalyzer:
         connection.commit()
         connection.close()
         print("database initialized")
+
+    # Adds a location to the location table and returns its id
+    # if it already exists it returns the id of the existing location
+    def add_location(self, name, latitude, longitude):
+        connection = sqlite3.connect(self.db_name)
+        cursor = connection.cursor()
+
+        # check if name or latitude and longitude already exist in table
+        cursor.execute("""
+            SELECT * FROM locations
+        """)
+        all_locations = cursor.fetchall()
+        for location in all_locations:
+            if location[1] == name:
+                print(f"location {name} already exists with id {location[0]}")
+                connection.close()
+                return location[0]
+            if location[2] == latitude and location[3] == longitude:
+                print(f"a location with latitude {latitude} and longitude {longitude} already exists with id {location[0]}")
+                connection.close()
+                return location[0]
+
+        # Inserting the location into the table
+        cursor.execute("""
+            INSERT INTO locations (name, latitude, longitude) VALUES (?, ?, ?)           
+        """, (name, latitude, longitude))
+
+        location_id = cursor.lastrowid
+        connection.commit()
+        connection.close()
+
+        print(f"location {name} added with id {location_id}")
+
+        return location_id
