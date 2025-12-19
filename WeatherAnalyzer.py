@@ -93,7 +93,7 @@ class WeatherAnalyzer:
         if location is None:
             print(f"location with id {location_id} not found")
             connection.close()
-            return
+            return False
 
         # Preparing parameters for API call
         name, latitude, longitude = location
@@ -129,8 +129,10 @@ class WeatherAnalyzer:
         except requests.exceptions.RequestException as e:
             timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             print(f"[{timestamp}] getting weather data for location {name} failed with exception: {e}")
+            return False
 
         connection.close()
+        return True
 
     # Getting the weather data for all saved locations
     def fetch_all_locations(self):
@@ -216,7 +218,7 @@ class WeatherAnalyzer:
         return all_locations
 
     # Returning all saved locations as json compatible dictionary
-    def list_all_locations_json(self):
+    def get_all_locations_json(self):
         locations = self.get_all_locations()
 
         return {
