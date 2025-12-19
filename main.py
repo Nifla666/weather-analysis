@@ -6,3 +6,4 @@ if __name__ == '__main__':
     analyzer.fetch_weather_data(berlin_id)
     analyzer.get_weather_data(berlin_id)
     analyzer.list_all_locations()
+    analyzer.start_periodic_fetching(interval_minutes=1)

@@ -1,7 +1,7 @@
 import sqlite3
 from datetime import datetime
-
 import requests
+import time
 
 class WeatherAnalyzer:
 
@@ -195,3 +195,20 @@ class WeatherAnalyzer:
 
         for (location_id, name, latitude, longitude) in all_locations:
             print(f"ID {location_id}: {name} (latitude: {latitude}, longitude: {longitude})")
+
+    # Periodically fetch the weather data for all saved locations in the specified interval
+    def start_periodic_fetching(self, interval_minutes=30):
+        print(f"\nperiodic fetching of weather data in intervals of {interval_minutes} minutes initiating...")
+        print("press CTRL+C to stop fetching") # Keyboard interrupt didn't really work in PyCharm
+
+        interval_seconds = interval_minutes * 60
+
+        try:
+            while True:
+                # Fetching all weather data
+                self.fetch_all_locations()
+                # Wait for next fetch time
+                time.sleep(interval_seconds)
+
+        except KeyboardInterrupt:
+            print("\nautomatic fetching disabled")
