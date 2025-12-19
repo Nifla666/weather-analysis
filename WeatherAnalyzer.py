@@ -278,7 +278,16 @@ class WeatherAnalyzer:
         return interval_configuration[0]
 
     # Saving a new interval for the periodic fetching in the configurations table
+    def set_periodic_fetch_interval(self, interval):
+        connection = sqlite3.connect(self.db_name)
+        cursor = connection.cursor()
 
+        cursor.execute("""
+            UPDATE configurations SET integer_value = ? WHERE id = ?
+        """, (interval, "fetch_interval_minutes"))
+        connection.commit()
+        connection.close()
+        print(f"{interval} set as new periodic fetch interval")
 
     # Periodically fetch the weather data for all saved locations in the specified interval (not used in the api)
     def start_periodic_fetching(self, interval_minutes=30):
