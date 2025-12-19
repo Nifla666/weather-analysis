@@ -1,16 +1,11 @@
-# This is a sample Python script.
+import WeatherAnalyzer
+from WeatherAnalyzerAPI import start_api_server
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    #analyzer = WeatherAnalyzer.WeatherAnalyzer()
+    #berlin_id = analyzer.add_location("Berlin", 52.52, 13.40)
+    #analyzer.fetch_weather_data(berlin_id)
+    #analyzer.print_weather_data(berlin_id)
+    #analyzer.print_all_locations()
+    #analyzer.start_periodic_fetching(interval_minutes=1)
+    start_api_server()
