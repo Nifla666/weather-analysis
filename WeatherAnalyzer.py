@@ -41,6 +41,23 @@ class WeatherAnalyzer:
             )
         """)
 
+        # Creating table for configurations
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS configurations (
+                id VARCHAR(50) NOT NULL PRIMARY KEY,
+                integer_value INTEGER
+            )
+        """)
+        # Inserting the standard interval for periodic fetching if it isn't in the table
+        cursor.execute("""
+            SELECT id, integer_value FROM configurations WHERE id = ?
+        """, ("fetch_interval_minutes", ))
+        interval_configuration = cursor.fetchone()
+        if interval_configuration is None:
+            cursor.execute("""
+                INSERT INTO configurations (id, integer_value) VALUES (?, ?)
+            """, ("fetch_interval_minutes", 30))
+
         connection.commit()
         connection.close()
         print("database initialized")
@@ -246,7 +263,24 @@ class WeatherAnalyzer:
         for (location_id, name, latitude, longitude) in all_locations:
             print(f"ID {location_id}: {name} (latitude: {latitude}, longitude: {longitude})")
 
-    # Periodically fetch the weather data for all saved locations in the specified interval
+    # Getting the currently saved interval for the periodic fetching from the configurations table in minutes
+    def get_periodic_fetch_interval(self):
+        connection = sqlite3.connect(self.db_name)
+        cursor = connection.cursor()
+
+        cursor.execute("""
+                    SELECT integer_value FROM configurations WHERE id = ?
+        """, ("fetch_interval_minutes",))
+        interval_configuration = cursor.fetchone()
+        if interval_configuration is None:
+            return 30
+
+        return interval_configuration[0]
+
+    # Saving a new interval for the periodic fetching in the configurations table
+
+
+    # Periodically fetch the weather data for all saved locations in the specified interval (not used in the api)
     def start_periodic_fetching(self, interval_minutes=30):
         print(f"\nperiodic fetching of weather data in intervals of {interval_minutes} minutes initiating...")
         print("press CTRL+C to stop fetching") # Keyboard interrupt didn't really work in PyCharm

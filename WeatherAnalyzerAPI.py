@@ -86,12 +86,13 @@ def fetch_periodically():
     if interval_minutes < 0:
         return jsonify({"error": "Interval minutes must be greater than 0"}), 400
 
+
     if scheduler.get_job("periodic-fetch"):
         scheduler.remove_job("periodic-fetch")
     scheduler.add_job(func=analyzer.fetch_all_locations, trigger="interval", minutes=interval_minutes, next_run_time=datetime.now(), id="periodic-fetch")
     scheduler.start()
 
-    return jsonify(f"periodic fetching initiated successfully (interval in minutes: {interval_minutes})"), 200
+    return jsonify(f"periodic fetching initiated successfully (interval in minutes: {interval_minutes})"), 201
 
 # Stop the periodic fetching job
 # Stop via curl -X DELETE http://localhost:5000/weather/fetch-periodically
