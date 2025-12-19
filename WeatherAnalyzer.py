@@ -168,13 +168,35 @@ class WeatherAnalyzer:
         # Printing data on console if some data does exist
         if data is None:
             print(f"no weather data found for location {location_id}")
-            return
+            return None
 
         print(f"\nWeather data for {data[0][0]}:")
         print(f"{'timestamp':<20} {'temperature':<10} {'precipitation':<15} {'humidity':<15}")
 
         for name, temperature, precipitation, humidity, timestamp in data:
             print(f"{timestamp:<20} {temperature}°C{'':<6} {precipitation}mm{'':<11} {humidity}%")
+
+        return data
+
+    # Printing the weather data on the console and converting it to a json compatible dictionary
+    def get_weather_data_json(self, location_id, limit=10):
+        data = self.get_weather_data(location_id, limit)
+
+        if data is None:
+            return None
+
+        return {
+            "location": data[0][0],
+            "data": [
+                {
+                    "temperature": row[1],
+                    "precipitation": row[2],
+                    "humidity": row[3],
+                    "timestamp": row[4]
+                }
+                for row in data
+            ]
+        }
 
     # Printing all saved locations on the console
     def list_all_locations(self):
@@ -189,12 +211,30 @@ class WeatherAnalyzer:
 
         if all_locations is None:
             print("no locations saved in database")
-            return
+            return None
 
         print("\nAll saved locations:")
 
         for (location_id, name, latitude, longitude) in all_locations:
             print(f"ID {location_id}: {name} (latitude: {latitude}, longitude: {longitude})")
+
+        return all_locations
+
+    # Printing all saved locations on the console and giving them back as json compatible dictionary
+    def list_all_locations_json(self):
+        locations = self.list_all_locations()
+
+        return {
+            "locations": [
+                {
+                    "id": location[0],
+                    "name": location[1],
+                    "latitude": location[2],
+                    "longitude": location[3]
+                }
+                for location in locations
+            ]
+        }
 
     # Periodically fetch the weather data for all saved locations in the specified interval
     def start_periodic_fetching(self, interval_minutes=30):
