@@ -1,8 +1,11 @@
 from WeatherAnalyzer import WeatherAnalyzer
 from flask import Flask, jsonify, request
+from flask_apscheduler import APScheduler
+from datetime import datetime
 
-# Global WeatherAnalyzer instance
+# Global WeatherAnalyzer instance and scheduler
 analyzer = WeatherAnalyzer()
+scheduler = APScheduler()
 
 # Creating flask app
 app = Flask(__name__)
@@ -19,6 +22,7 @@ def home():
             "POST /locations": "Adding new location (JSON: {name, latitude, longitude}).",
             "GET /weather/<location_id>": "Retrieving weather data for a given location (optional: ?limit=10).",
             "POST /weather/<location_id>/fetch": "Fetching new weather data for a given location.",
+            "POST /weather/fetch-periodically": "Start periodic fetching all locations (optional ?interval-minutes=30)"
         }
     })
 
@@ -37,7 +41,7 @@ def add_location():
     data = request.get_json()
 
     if not data or "name" not in data or "latitude" not in data or "longitude" not in data:
-        return jsonify({"error": "name, latitude and longitude necessary"}), 400
+        return jsonify({"error": "name, latitude and longitude necessary"}), 400    # Bad Request
 
     location_id = analyzer.add_location(data['name'], data['latitude'], data['longitude'])
 
@@ -82,8 +86,22 @@ def fetch_periodically():
     if interval_minutes < 0:
         return jsonify({"error": "Interval minutes must be greater than 0"}), 400
 
-    analyzer.start_periodic_fetching(interval_minutes)
-    return jsonify({"periodic fetching terminated successfully"})
+    if scheduler.get_job("periodic-fetch"):
+        scheduler.remove_job("periodic-fetch")
+    scheduler.add_job(func=analyzer.fetch_all_locations, trigger="interval", minutes=interval_minutes, next_run_time=datetime.now(), id="periodic-fetch")
+    scheduler.start()
+
+    return jsonify(f"periodic fetching initiated successfully (interval in minutes: {interval_minutes})"), 200
+
+# Stop the periodic fetching job
+# Stop via curl -X DELETE http://localhost:5000/weather/fetch-periodically
+@app.route('/weather/fetch-periodically', methods=['DELETE'])
+def stop_fetching_periodically():
+    if scheduler.get_job("periodic-fetch"):
+        scheduler.remove_job("periodic-fetch")
+        return jsonify("periodic fetching terminated successfully"), 200
+
+    return jsonify({"error": "no periodic fetch job found"}), 400
 
 # Starting the Flask webserver
 def start_api_server(port=5000):
