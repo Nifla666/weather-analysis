@@ -175,3 +175,23 @@ class WeatherAnalyzer:
 
         for name, temperature, precipitation, humidity, timestamp in data:
             print(f"{timestamp:<20} {temperature}°C{'':<6} {precipitation}mm{'':<11} {humidity}%")
+
+    # Printing all saved locations on the console
+    def list_all_locations(self):
+        connection = sqlite3.connect(self.db_name)
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            SELECT id, name, latitude, longitude FROM locations           
+        """)
+        all_locations = cursor.fetchall()
+        connection.close()
+
+        if all_locations is None:
+            print("no locations saved in database")
+            return
+
+        print("\nAll saved locations:")
+
+        for (location_id, name, latitude, longitude) in all_locations:
+            print(f"ID {location_id}: {name} (latitude: {latitude}, longitude: {longitude})")
