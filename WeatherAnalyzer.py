@@ -146,3 +146,32 @@ class WeatherAnalyzer:
         for (location_id, ) in all_locations:
             self.fetch_weather_data(location_id)
 
+    # Printing the last saved weather data on the console
+    def get_weather_data(self, location_id, limit=10):
+        connection = sqlite3.connect(self.db_name)
+        cursor = connection.cursor()
+
+        # Joining the two tables by the location_id in this query to also get the name of the location
+        # They will be returned in descending order regarding the timestamps
+        cursor.execute("""
+            SELECT l.name, w.temperature, w.precipitation, w.humidity, w.timestamp 
+            FROM weather_data w
+            JOIN locations l ON w.location_id = l.id
+            WHERE  w.location_id = ?
+            ORDER BY w.timestamp DESC
+            LIMIT ?
+        """, (location_id, limit))
+
+        data = cursor.fetchall()
+        connection.close()
+
+        # Printing data on console if some data does exist
+        if data is None:
+            print(f"no weather data found for location {location_id}")
+            return
+
+        print(f"\nWeather data for {data[0][0]}:")
+        print(f"{'timestamp':<20} {'temperature':<10} {'precipitation':<15} {'humidity':<15}")
+
+        for name, temperature, precipitation, humidity, timestamp in data:
+            print(f"{timestamp:<20} {temperature}°C{'':<6} {precipitation}mm{'':<11} {humidity}%")
