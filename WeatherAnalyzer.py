@@ -131,3 +131,18 @@ class WeatherAnalyzer:
             print(f"[{timestamp}] getting weather data for location {name} failed with exception: {e}")
 
         connection.close()
+
+    # Getting the weather data for all saved locations
+    def fetch_all_locations(self):
+        connection = sqlite3.connect(self.db_name)
+        cursor = connection.cursor()
+
+        cursor.execute("""
+            SELECT id FROM locations           
+        """)
+        all_locations = cursor.fetchall()
+        connection.close()
+
+        for (location_id, ) in all_locations:
+            self.fetch_weather_data(location_id)
+
