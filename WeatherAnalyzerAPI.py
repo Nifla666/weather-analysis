@@ -36,27 +36,27 @@ def get_locations():
 def add_location():
     data = request.get_json()
 
-    if not data or 'name' not in data or 'latitude' not in data or 'longitude' not in data:
-        return jsonify({'error': 'name, latitude and longitude necessary'}), 400
+    if not data or "name" not in data or "latitude" not in data or "longitude" not in data:
+        return jsonify({"error": "name, latitude and longitude necessary"}), 400
 
     location_id = analyzer.add_location(data['name'], data['latitude'], data['longitude'])
 
     return jsonify({
-        'success': True,
-        'location_id': location_id,
-        'name': data['name']
+        "success": True,
+        "location_id": location_id,
+        "name": data["name"]
     }), 201     # HTTP  status code resource created
 
 # Returns weather data for given location
 # Get via: curl http://localhost:5000/weather/1?limit=5 where 1 is an example id and from ? its optional
 @app.route('/weather/<int:location_id>', methods=['GET'])
 def get_weather(location_id):
-    limit = request.args.get('limit', default=10, type=int)
+    limit = request.args.get("limit", default=10, type=int)
 
     data = analyzer.get_weather_data_json(location_id, limit)
 
     if not data:
-        return jsonify({'error': 'No data found or location non existent'}), 404    # HTTP status code resource not found
+        return jsonify({"error": "No data found or location non existent"}), 404    # HTTP status code resource not found
 
     return jsonify(data)
 
@@ -67,12 +67,23 @@ def fetch_weather_now(location_id):
     success = analyzer.fetch_weather_data(location_id)
 
     if not success:
-        return jsonify({'error': 'Error while fetching weather data'}), 500     # HTTP status code internal server error
+        return jsonify({"error": "Error while fetching weather data"}), 500     # HTTP status code internal server error
 
     return jsonify({
-        'success': True,
-        'message': f'Weather data for location with ID {location_id} successfully fetched.'
+        "success": True,
+        "message": f"Weather data for location with ID {location_id} successfully fetched."
     })
+
+# Start periodic fetching all locations (optional ?interval-minutes=30)
+# Start via curl -X POST http://localhost:5000/weather/fetch-periodically?interval-minutes=30
+@app.route('/weather/fetch-periodically', methods=['POST'])
+def fetch_periodically():
+    interval_minutes = request.args.get("interval-minutes", default=30, type=int)
+    if interval_minutes < 0:
+        return jsonify({"error": "Interval minutes must be greater than 0"}), 400
+
+    analyzer.start_periodic_fetching(interval_minutes)
+    return jsonify({"periodic fetching terminated successfully"})
 
 # Starting the Flask webserver
 def start_api_server(port=5000):

@@ -252,6 +252,10 @@ class WeatherAnalyzer:
         print("press CTRL+C to stop fetching") # Keyboard interrupt didn't really work in PyCharm
 
         interval_seconds = interval_minutes * 60
+        all_locations = self.get_all_locations()
+
+        if all_locations is None:
+            return
 
         try:
             while True:
