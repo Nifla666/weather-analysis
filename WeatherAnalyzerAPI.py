@@ -82,24 +82,30 @@ def fetch_weather_now(location_id):
 # Start via curl -X POST http://localhost:5000/weather/fetch-periodically?interval-minutes=30
 @app.route('/weather/fetch-periodically', methods=['POST'])
 def fetch_periodically():
-    interval_minutes = request.args.get("interval-minutes", default=30, type=int)
+    current_interval = analyzer.get_periodic_fetch_interval()
+    interval_minutes = request.args.get("interval-minutes", default=current_interval, type=int)
     if interval_minutes < 0:
         return jsonify({"error": "Interval minutes must be greater than 0"}), 400
 
+    # Save new value if it differs from the current
+    if interval_minutes != current_interval:
+        analyzer.set_periodic_fetch_interval(interval_minutes)
 
-    if scheduler.get_job("periodic-fetch"):
-        scheduler.remove_job("periodic-fetch")
-    scheduler.add_job(func=analyzer.fetch_all_locations, trigger="interval", minutes=interval_minutes, next_run_time=datetime.now(), id="periodic-fetch")
-    scheduler.start()
+    print(scheduler.get_job("periodic-fetch"))
+    if scheduler.get_job("periodic-fetch") is None:
+        scheduler.add_job(func=analyzer.fetch_all_locations, trigger="interval", minutes=interval_minutes, next_run_time=datetime.now(), id="periodic-fetch")
+        scheduler.start()
+    else:
+        scheduler.modify_job("periodic-fetch", trigger="interval", minutes=interval_minutes)
 
     return jsonify(f"periodic fetching initiated successfully (interval in minutes: {interval_minutes})"), 201
 
-# Stop the periodic fetching job
+# Stop the periodic fetching job with one last fetch
 # Stop via curl -X DELETE http://localhost:5000/weather/fetch-periodically
 @app.route('/weather/fetch-periodically', methods=['DELETE'])
 def stop_fetching_periodically():
     if scheduler.get_job("periodic-fetch"):
-        scheduler.remove_job("periodic-fetch")
+        scheduler.modify_job("periodic-fetch", trigger="date", run_date=datetime.now())
         return jsonify("periodic fetching terminated successfully"), 200
 
     return jsonify({"error": "no periodic fetch job found"}), 400
