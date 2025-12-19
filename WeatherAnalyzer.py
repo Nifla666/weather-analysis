@@ -146,7 +146,7 @@ class WeatherAnalyzer:
         for (location_id, ) in all_locations:
             self.fetch_weather_data(location_id)
 
-    # Printing the last saved weather data on the console
+    # Returning the last saved weather data
     def get_weather_data(self, location_id, limit=10):
         connection = sqlite3.connect(self.db_name)
         cursor = connection.cursor()
@@ -165,20 +165,9 @@ class WeatherAnalyzer:
         data = cursor.fetchall()
         connection.close()
 
-        # Printing data on console if some data does exist
-        if data is None:
-            print(f"no weather data found for location {location_id}")
-            return None
-
-        print(f"\nWeather data for {data[0][0]}:")
-        print(f"{'timestamp':<20} {'temperature':<10} {'precipitation':<15} {'humidity':<15}")
-
-        for name, temperature, precipitation, humidity, timestamp in data:
-            print(f"{timestamp:<20} {temperature}°C{'':<6} {precipitation}mm{'':<11} {humidity}%")
-
         return data
 
-    # Printing the weather data on the console and converting it to a json compatible dictionary
+    # Returning the last saved weather data as a json compatible dictionary
     def get_weather_data_json(self, location_id, limit=10):
         data = self.get_weather_data(location_id, limit)
 
@@ -198,8 +187,23 @@ class WeatherAnalyzer:
             ]
         }
 
-    # Printing all saved locations on the console
-    def list_all_locations(self):
+    # Printing the last saved weather data on the console
+    def print_weather_data(self, location_id, limit=10):
+        data = self.get_weather_data(location_id, limit)
+
+        # Printing data on console if some data does exist
+        if data is None:
+            print(f"no weather data found for location {location_id}")
+            return
+
+        print(f"\nWeather data for {data[0][0]}:")
+        print(f"{'timestamp':<20} {'temperature':<10} {'precipitation':<15} {'humidity':<15}")
+
+        for name, temperature, precipitation, humidity, timestamp in data:
+            print(f"{timestamp:<20} {temperature}°C{'':<6} {precipitation}mm{'':<11} {humidity}%")
+
+    # Returning all saved locations
+    def get_all_locations(self):
         connection = sqlite3.connect(self.db_name)
         cursor = connection.cursor()
 
@@ -209,20 +213,11 @@ class WeatherAnalyzer:
         all_locations = cursor.fetchall()
         connection.close()
 
-        if all_locations is None:
-            print("no locations saved in database")
-            return None
-
-        print("\nAll saved locations:")
-
-        for (location_id, name, latitude, longitude) in all_locations:
-            print(f"ID {location_id}: {name} (latitude: {latitude}, longitude: {longitude})")
-
         return all_locations
 
-    # Printing all saved locations on the console and giving them back as json compatible dictionary
+    # Returning all saved locations as json compatible dictionary
     def list_all_locations_json(self):
-        locations = self.list_all_locations()
+        locations = self.get_all_locations()
 
         return {
             "locations": [
@@ -235,6 +230,19 @@ class WeatherAnalyzer:
                 for location in locations
             ]
         }
+
+    # Printing all saved locations on the console
+    def print_all_locations(self):
+        all_locations = self.get_all_locations()
+
+        if all_locations is None:
+            print("no locations saved in database")
+            return
+
+        print("\nAll saved locations:")
+
+        for (location_id, name, latitude, longitude) in all_locations:
+            print(f"ID {location_id}: {name} (latitude: {latitude}, longitude: {longitude})")
 
     # Periodically fetch the weather data for all saved locations in the specified interval
     def start_periodic_fetching(self, interval_minutes=30):
