@@ -1,4 +1,7 @@
 import sqlite3
+from datetime import datetime
+
+import requests
 
 class WeatherAnalyzer:
 
@@ -75,3 +78,56 @@ class WeatherAnalyzer:
         print(f"location {name} added with id {location_id}")
 
         return location_id
+
+    # Getting the weather data from the API and saving it in the database
+    def fetch_weather_data(self, location_id):
+        connection = sqlite3.connect(self.db_name)
+        cursor = connection.cursor()
+
+        # First getting the location details
+        cursor.execute("""
+            SELECT name, latitude, longitude FROM locations WHERE id = ?           
+        """, (location_id,))
+        location = cursor.fetchone()
+
+        if location is None:
+            print(f"location with id {location_id} not found")
+            connection.close()
+            return
+
+        # Preparing parameters for API call
+        name, latitude, longitude = location
+        parameters = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "current": "temperature_2m,precipitation,relative_humidity_2m"
+        }
+
+        # Trying to get the data from the API
+        try:
+            response = requests.get(self.api_url, params=parameters)
+            # If status code is between 200 and 299 this does nothing but if something goes wrong while getting the
+            # website a HTTPError will be raised
+            response.raise_for_status()
+            # Get the fetched json data and splitting it in our requested values
+            data = response.json()
+            current = data["current"]
+            temperature = current["temperature_2m"]
+            precipitation = current["precipitation"]
+            humidity = current["relative_humidity_2m"]
+
+            # Inserting the fetched data in our database timestamp is automatically set to current timestamp
+            cursor.execute("""
+                INSERT INTO weather_data (location_id, temperature, precipitation, humidity) 
+                VALUES (?, ?, ?, ?)
+            """, (location_id, temperature, precipitation, humidity))
+
+            connection.commit()
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"[{timestamp}] weather data for location {name} saved with values: {temperature}°C, {precipitation}mm, {humidity}%")
+
+        except requests.exceptions.RequestException as e:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"[{timestamp}] getting weather data for location {name} failed with exception: {e}")
+
+        connection.close()
